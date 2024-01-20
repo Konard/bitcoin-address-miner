@@ -98,7 +98,8 @@ async fn main() {
     // let target_address = "1LgpDjsqkxF9cTkz3UYSbdTJuvbZ45PKvx";
     
     // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
-    let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000001cdede8").unwrap();
+    // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000001cdede8").unwrap();
+    let min_secret_key_bytes = decode_hex("00000000000000000000000000000000000000000000000200000000037d5b38").unwrap();
 
     let max_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000003ffffffffffffffff").unwrap();
 
