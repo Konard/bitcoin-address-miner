@@ -11,6 +11,14 @@ pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
         .collect()
 }
 
+pub fn encode_hex(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        write!(&mut s, "{:02x}", b).unwrap();
+    }
+    s
+}
+
 fn check_allowed_chars(starting_letters: &str) -> bool {
     let allowed_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     starting_letters.chars().all(|c| allowed_chars.contains(c))
@@ -85,6 +93,50 @@ async fn main() {
     // let secret_key = SecretKey::new(&mut rand::thread_rng());
 
     let mut secret_key_bytes = decode_hex("00000000000000000000000000000000000000000000000273a132f43c23acd0").unwrap();
+
+    let target_address = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so";
+    // let target_address = "1LgpDjsqkxF9cTkz3UYSbdTJuvbZ45PKvx";
+    
+    let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
+    let max_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000003ffffffffffffffff").unwrap();
+
+    // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
+    // let max_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000002").unwrap();
+
+    let mut current_secret_key_bytes = min_secret_key_bytes.to_vec();
+
+    let mut i = 0;
+
+    while current_secret_key_bytes != max_secret_key_bytes {
+        // println!("hello");
+
+        let secret_key = SecretKey::from_slice(&current_secret_key_bytes).unwrap();
+
+        let public_key = SecpPublicKey::from_secret_key(&secp, &secret_key);
+
+        let bitcoin_public_key =
+        PublicKey::from(SecpPublicKey::from_slice(&public_key.serialize()[..]).unwrap());
+
+        let address = Address::p2pkh(&bitcoin_public_key, Network::Bitcoin);
+
+        if address.to_string() == target_address {
+            println!("target secret key: {}", encode_hex(&current_secret_key_bytes));
+            println!("target address: {}", address);
+            break;
+        }
+
+        if i % 1_000 == 0 {
+            println!("current secret key: {}", encode_hex(&current_secret_key_bytes));
+        }
+
+        i = i + 1;
+        increment_bytes(&mut current_secret_key_bytes, 1);
+    }
+
+    // println!("{:?}", min_secret_key_bytes);
+    // println!("{:?}", max_secret_key_bytes);
+
+    return;
 
     increment_bytes(&mut secret_key_bytes, 1);
 
