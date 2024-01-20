@@ -1,5 +1,5 @@
 use bitcoin::{Address, PublicKey, Network};
-use bitcoin::secp256k1::{rand, Secp256k1, SecretKey, PublicKey as SecpPublicKey};
+use bitcoin::secp256k1::{rand, Secp256k1, SecretKey, PublicKey as SecpPublicKey, Signing};
 use hex::encode_upper;
 use std::time::Instant;
 use std::{fmt::Write, num::ParseIntError};
@@ -78,6 +78,15 @@ fn increment_bytes(b256: &mut [u8], mut amount: u64) -> u64 {
     amount
 }
 
+fn private_key_to_address<C: Signing>(secp: &Secp256k1<C>, bytes: &[u8]) -> bitcoin::Address {
+    let secret_key = SecretKey::from_slice(&bytes).unwrap();
+    let public_key = SecpPublicKey::from_secret_key(&secp, &secret_key);
+    let secp_public_key = SecpPublicKey::from_slice(&public_key.serialize()[..]).unwrap();
+    let bitcoin_public_key = PublicKey::from(secp_public_key);
+    let address = Address::p2pkh(&bitcoin_public_key, Network::Bitcoin);
+    return address;
+}
+
 
 #[tokio::main]
 async fn main() {
@@ -111,16 +120,7 @@ async fn main() {
     let mut i = 0;
 
     while current_secret_key_bytes != max_secret_key_bytes {
-        // println!("hello");
-
-        let secret_key = SecretKey::from_slice(&current_secret_key_bytes).unwrap();
-
-        let public_key = SecpPublicKey::from_secret_key(&secp, &secret_key);
-
-        let bitcoin_public_key =
-        PublicKey::from(SecpPublicKey::from_slice(&public_key.serialize()[..]).unwrap());
-
-        let address = Address::p2pkh(&bitcoin_public_key, Network::Bitcoin);
+        let address = private_key_to_address(&secp, &current_secret_key_bytes);
 
         if address.to_string() == target_address {
             println!("target secret key: {}", encode_hex(&current_secret_key_bytes));
