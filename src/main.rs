@@ -2,7 +2,7 @@ use bitcoin::{Address, PublicKey, Network};
 // use bitcoin::secp256k1::{rand, Secp256k1, SecretKey, PublicKey as SecpPublicKey, Signing};
 use bitcoin::secp256k1::{Secp256k1, SecretKey, PublicKey as SecpPublicKey, Signing};
 // use hex::encode_upper;
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use std::{fmt::Write, num::ParseIntError};
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
@@ -120,6 +120,8 @@ async fn main() {
 
     let mut i = 0;
     let mut before = Instant::now();
+    let mut average_nanos = 0;
+    let addresses_per_batch = 100_000;
 
     while current_secret_key_bytes != max_secret_key_bytes {
         let address = private_key_to_address(&secp, &current_secret_key_bytes);
@@ -130,9 +132,15 @@ async fn main() {
             break;
         }
 
-        if i % 100_000 == 0 {
+        if i % addresses_per_batch == 0 {
+            let elapsed_nanoseconds = before.elapsed().as_nanos();
+            if average_nanos == 0 {
+                average_nanos = elapsed_nanoseconds
+            } else {
+                average_nanos = (average_nanos + elapsed_nanoseconds) / 2;
+            }
+            println!("average time for {} addresses: {:.2?}", addresses_per_batch, Duration::from_nanos(average_nanos as u64));
             println!("current secret key: {}", encode_hex(&current_secret_key_bytes));
-            println!("elapsed time: {:.2?}", before.elapsed());
             before = Instant::now();
         }
 
