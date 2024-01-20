@@ -2,6 +2,14 @@ use bitcoin::{Address, PublicKey, Network};
 use bitcoin::secp256k1::{rand, Secp256k1, SecretKey, PublicKey as SecpPublicKey};
 use hex::encode_upper;
 use std::time::Instant;
+use std::{fmt::Write, num::ParseIntError};
+
+pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
+        .collect()
+}
 
 fn check_allowed_chars(starting_letters: &str) -> bool {
     let allowed_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -47,18 +55,41 @@ async fn mine_address(starting_letters: String) {
     }
 }
 
+fn increment_bytes(b256: &mut [u8], mut amount: u64) -> u64 {
+    let mut i = b256.len() - 1;
+
+    while amount > 0 {
+        amount += b256[i] as u64;
+        b256[i] = amount as u8;
+        amount /= 256;
+
+        if i == 0 { break; }
+        i -= 1;
+    }
+
+    amount
+}
+
+
 #[tokio::main]
 async fn main() {
 
     let secp = Secp256k1::new();
 
-    let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
+    // let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
 
-    println!("{}", secret_key.display_secret());
+    // println!("{}", secret_key.display_secret());
     // println!("{}", public_key.display_secret());
 
     // let secp = Secp256k1::new();
     // let secret_key = SecretKey::new(&mut rand::thread_rng());
+
+    let mut secret_key_bytes = decode_hex("00000000000000000000000000000000000000000000000273a132f43c23acd0").unwrap();
+
+    increment_bytes(&mut secret_key_bytes, 1);
+
+    let secret_key = SecretKey::from_slice(&secret_key_bytes).unwrap();
+
     let public_key = SecpPublicKey::from_secret_key(&secp, &secret_key);
 
     let bitcoin_public_key =
@@ -66,9 +97,9 @@ async fn main() {
 
     let address = Address::p2pkh(&bitcoin_public_key, Network::Bitcoin);
 
-    println!("{}", secret_key.display_secret());
-    println!("{}", public_key);
-    println!("{}", address);
+    println!("secret_key: {}", secret_key.display_secret());
+    // println!("{}", public_key);
+    println!("bitcoin_address: {}", address);
 
     return;
     // Ask the user for the starting letters.
