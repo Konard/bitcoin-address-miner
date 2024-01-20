@@ -1,5 +1,5 @@
 use bitcoin::{Address, PublicKey, Network};
-use bitcoin::secp256k1::{rand, Secp256k1, PublicKey as SecpPublicKey};
+use bitcoin::secp256k1::{rand, Secp256k1, SecretKey, PublicKey as SecpPublicKey};
 use hex::encode_upper;
 use std::time::Instant;
 
@@ -49,6 +49,28 @@ async fn mine_address(starting_letters: String) {
 
 #[tokio::main]
 async fn main() {
+
+    let secp = Secp256k1::new();
+
+    let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
+
+    println!("{}", secret_key.display_secret());
+    // println!("{}", public_key.display_secret());
+
+    // let secp = Secp256k1::new();
+    // let secret_key = SecretKey::new(&mut rand::thread_rng());
+    let public_key = SecpPublicKey::from_secret_key(&secp, &secret_key);
+
+    let bitcoin_public_key =
+    PublicKey::from(SecpPublicKey::from_slice(&public_key.serialize()[..]).unwrap());
+
+    let address = Address::p2pkh(&bitcoin_public_key, Network::Bitcoin);
+
+    println!("{}", secret_key.display_secret());
+    println!("{}", public_key);
+    println!("{}", address);
+
+    return;
     // Ask the user for the starting letters.
     println!("[BITCOIN KEY/ADDRESS MINING] \n Enter the starting letters for the address: ");
     let mut input = String::new();
