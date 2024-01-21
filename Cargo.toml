@@ -13,3 +13,4 @@ repository = "https://github.com/r3drun3/bitcoin-address-miner"
 bitcoin = { version = "0.31.0", features = ["rand-std"] }
 tokio = { version = "1", features = ["full"] }
 hex = "0.4.2"
+rug = "1.23.0"
