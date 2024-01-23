@@ -133,10 +133,10 @@ async fn main() {
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000007cf7f180").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000008f847a80").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000012b7a2080").unwrap();
-    let min_secret_key_bytes = decode_hex("00000000000000000000000000000000000000000000000200000002451ffbe0").unwrap();
+    let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000245f10780").unwrap();
     let max_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000003ffffffffffffffff").unwrap();
 
-    let int = Integer::parse_radix("00000000000000000000000000000000000000000000000200000002451ffbe0", 16).unwrap();
+    let int = Integer::parse_radix("0000000000000000000000000000000000000000000000020000000245f10780", 16).unwrap();
     println!("{:?}", int);
     let int2 = Integer::parse_radix("000000000000000000000000000000000000000000000003ffffffffffffffff", 16).unwrap();
     // println!("{:?}", int.complete() < int2.complete());
