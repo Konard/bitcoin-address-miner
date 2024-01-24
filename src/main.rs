@@ -1,5 +1,6 @@
 use bitcoin::{Network, PrivateKey, PublicKey, Address};
 use bitcoin::secp256k1::{Secp256k1, Signing};
+use std::str::FromStr;
 // use std::fmt::Debug;
 // use hex::encode_upper;
 use std::time::{Instant, Duration};
@@ -81,19 +82,17 @@ fn increment_bytes(b256: &mut [u8], mut amount: u64) -> u64 {
     amount
 }
 
-fn append_to_32(bytes: &[u8]) -> Vec<u8> {
+fn append_to_32(mut bytes: Vec<u8>) -> Vec<u8> {
     if bytes.len() < 32 {
         let mut result: Vec<u8> = vec![0; 32 - bytes.len()];
-        result.extend_from_slice(bytes);
+        result.append(&mut bytes);
         return result;
     } else {
-        let mut result: Vec<u8> = vec![];
-        result.extend_from_slice(bytes);
-        return result;
+        return bytes;
     }
 }
 
-fn private_key_to_address<C: Signing>(secp: &Secp256k1<C>, bytes: &[u8]) -> bitcoin::Address {
+fn private_key_to_address<C: Signing>(secp: &Secp256k1<C>, bytes: Vec<u8>) -> bitcoin::Address {
     let processed_bytes = append_to_32(bytes);
     let private_key = PrivateKey::from_slice(&processed_bytes, Network::Bitcoin).unwrap();
     let public_key = PublicKey::from_private_key(&secp, &private_key);
@@ -102,6 +101,40 @@ fn private_key_to_address<C: Signing>(secp: &Secp256k1<C>, bytes: &[u8]) -> bitc
     return address;
 }
 
+fn search_private_key_for_address(min_secret_key_bytes: Vec<u8>, max_secret_key_bytes: Vec<u8>, target_address: String) {
+    let secp = Secp256k1::new();
+    let mut current_secret_key_bytes = min_secret_key_bytes.to_vec();
+
+    let mut i = 0;
+    let mut before = Instant::now();
+    let mut average_nanos = 0;
+    let addresses_per_batch = 100_000;
+
+    while current_secret_key_bytes != max_secret_key_bytes {
+        let address = private_key_to_address(&secp, current_secret_key_bytes.to_vec());
+
+        if address.to_string() == target_address {
+            println!("target secret key: {}", encode_hex(&current_secret_key_bytes));
+            println!("target address: {}", address);
+            break;
+        }
+
+        if i % addresses_per_batch == 0 {
+            let elapsed_nanoseconds = before.elapsed().as_nanos();
+            if average_nanos == 0 {
+                average_nanos = elapsed_nanoseconds
+            } else {
+                average_nanos = (average_nanos + elapsed_nanoseconds) / 2;
+            }
+            println!("average time for {} addresses: {:.2?}", addresses_per_batch, Duration::from_nanos(average_nanos as u64));
+            println!("current secret key: {}", encode_hex(&current_secret_key_bytes));
+            before = Instant::now();
+        }
+
+        i = i + 1;
+        increment_bytes(&mut current_secret_key_bytes, 1);
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -121,7 +154,7 @@ async fn main() {
 
     // let mut secret_key_bytes = decode_hex("00000000000000000000000000000000000000000000000273a132f43c23acd0").unwrap();
 
-    let target_address = "13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so";
+    let target_address = String::from_str("13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so").unwrap();
     // let target_address = "1LgpDjsqkxF9cTkz3UYSbdTJuvbZ45PKvx";
     // let target_address = "1LeH7eeznEDVeNNmAinoiSjuhNa77izzNo";
     
@@ -155,45 +188,15 @@ async fn main() {
     // let mut vec1: Vec<u8> = vec![0; 23];
     // vec1.append(&mut min_bytes);
 
-    let address1 = private_key_to_address(&secp, &min_secret_key_bytes);
-    let address2 = private_key_to_address(&secp, &min_bytes);
+    let address1 = private_key_to_address(&secp, min_secret_key_bytes.to_vec());
+    let address2 = private_key_to_address(&secp, min_bytes.to_vec());
     println!("address1: {}", address1);
     println!("address2: {}", address2);
 
     // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
     // let max_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000002").unwrap();
 
-    let mut current_secret_key_bytes = min_secret_key_bytes.to_vec();
-
-    let mut i = 0;
-    let mut before = Instant::now();
-    let mut average_nanos = 0;
-    let addresses_per_batch = 100_000;
-
-    while current_secret_key_bytes != max_secret_key_bytes {
-        let address = private_key_to_address(&secp, &current_secret_key_bytes);
-
-        if address.to_string() == target_address {
-            println!("target secret key: {}", encode_hex(&current_secret_key_bytes));
-            println!("target address: {}", address);
-            break;
-        }
-
-        if i % addresses_per_batch == 0 {
-            let elapsed_nanoseconds = before.elapsed().as_nanos();
-            if average_nanos == 0 {
-                average_nanos = elapsed_nanoseconds
-            } else {
-                average_nanos = (average_nanos + elapsed_nanoseconds) / 2;
-            }
-            println!("average time for {} addresses: {:.2?}", addresses_per_batch, Duration::from_nanos(average_nanos as u64));
-            println!("current secret key: {}", encode_hex(&current_secret_key_bytes));
-            before = Instant::now();
-        }
-
-        i = i + 1;
-        increment_bytes(&mut current_secret_key_bytes, 1);
-    }
+    search_private_key_for_address(min_secret_key_bytes, max_secret_key_bytes, target_address);
 
     // println!("{:?}", min_secret_key_bytes);
     // println!("{:?}", max_secret_key_bytes);
