@@ -1,3 +1,4 @@
+use bitcoin::base58::encode;
 use bitcoin::{Network, PrivateKey, PublicKey, Address};
 use bitcoin::secp256k1::{Secp256k1, Signing};
 use std::str::FromStr;
@@ -6,7 +7,7 @@ use std::str::FromStr;
 use std::time::{Instant, Duration};
 use std::{fmt::Write, num::ParseIntError};
 // use rug::{Assign, Integer, Complete};
-use rug::{Integer, Complete};
+use rug::{Integer, Complete, integer, Assign};
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
@@ -21,6 +22,12 @@ pub fn encode_hex(bytes: &[u8]) -> String {
         write!(&mut s, "{:02x}", b).unwrap();
     }
     s
+}
+
+pub fn integer_to_hex(integer: Integer) -> String {
+    let bytes = integer.to_digits::<u8>(rug::integer::Order::MsfBe);
+    let processed_bytes = append_to_32(bytes);
+    return encode_hex(&processed_bytes);
 }
 
 // fn check_allowed_chars(starting_letters: &str) -> bool {
@@ -82,6 +89,18 @@ fn increment_bytes(b256: &mut [u8], mut amount: u64) -> u64 {
     amount
 }
 
+fn less_then(left: &mut [u8], right: &mut [u8]) -> bool {
+    let length = left.len();
+    let mut i = left.len() - 1;
+    while i < length {
+        if left[i] < right[i] {
+            return true;
+        }
+        i += 1;
+    }
+    return false;
+}
+
 fn append_to_32(mut bytes: Vec<u8>) -> Vec<u8> {
     if bytes.len() < 32 {
         let mut result: Vec<u8> = vec![0; 32 - bytes.len()];
@@ -93,12 +112,16 @@ fn append_to_32(mut bytes: Vec<u8>) -> Vec<u8> {
 }
 
 fn private_key_to_address<C: Signing>(secp: &Secp256k1<C>, bytes: Vec<u8>) -> bitcoin::Address {
-    let processed_bytes = append_to_32(bytes);
-    let private_key = PrivateKey::from_slice(&processed_bytes, Network::Bitcoin).unwrap();
+    let private_key = PrivateKey::from_slice(&bytes, Network::Bitcoin).unwrap();
     let public_key = PublicKey::from_private_key(&secp, &private_key);
-    // println!("public_key: {}", public_key.to_string());
     let address = Address::p2pkh(&public_key, Network::Bitcoin);
     return address;
+}
+
+fn integer_private_key_to_address<C: Signing>(secp: &Secp256k1<C>, private_key: Integer) -> bitcoin::Address {
+    let bytes = private_key.to_digits::<u8>(rug::integer::Order::MsfBe);
+    let processed_bytes = append_to_32(bytes);
+    return private_key_to_address(&secp, processed_bytes);
 }
 
 fn search_private_key_for_address(min_secret_key_bytes: Vec<u8>, max_secret_key_bytes: Vec<u8>, target_address: String) {
@@ -136,6 +159,46 @@ fn search_private_key_for_address(min_secret_key_bytes: Vec<u8>, max_secret_key_
     }
 }
 
+fn search_private_key_for_address_in_integer_range(min_secret_key: Integer, max_secret_key: Integer, target_address: String) {
+    let secp = Secp256k1::new();
+    let mut current_secret = min_secret_key.clone();
+
+    let mut i = 0;
+    let mut before = Instant::now();
+    let mut average_nanos = 0;
+    let addresses_per_batch = 100_000;
+    let step = if max_secret_key < min_secret_key {
+        -1
+    } else {
+        1
+    };
+
+    while current_secret != max_secret_key {
+        let address = integer_private_key_to_address(&secp, current_secret.clone());
+
+        if address.to_string() == target_address {
+            println!("target secret key: {}", integer_to_hex(current_secret.clone()));
+            println!("target address: {}", address);
+            break;
+        }
+
+        if i % addresses_per_batch == 0 {
+            let elapsed_nanoseconds = before.elapsed().as_nanos();
+            if average_nanos == 0 {
+                average_nanos = elapsed_nanoseconds
+            } else {
+                average_nanos = (average_nanos + elapsed_nanoseconds) / 2;
+            }
+            println!("average time for {} addresses: {:.2?}", addresses_per_batch, Duration::from_nanos(average_nanos as u64));
+            println!("current secret key: {}", integer_to_hex(current_secret.clone()));
+            before = Instant::now();
+        }
+
+        i = i + 1;
+        current_secret.assign(current_secret.clone() + step);
+    }
+}
+
 #[tokio::main]
 async fn main() {
 
@@ -170,15 +233,15 @@ async fn main() {
     let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000245f10780").unwrap();
     let max_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000003ffffffffffffffff").unwrap();
 
-    let int = Integer::parse_radix("0000000000000000000000000000000000000000000000020000000245f10780", 16).unwrap();
-    println!("{:?}", int);
-    let int2 = Integer::parse_radix("000000000000000000000000000000000000000000000003ffffffffffffffff", 16).unwrap();
+    let min_secret_key = Integer::parse_radix("0000000000000000000000000000000000000000000000020000000245f10780", 16).unwrap().complete();
+    println!("{:?}", min_secret_key);
+    let max_secret_key = Integer::parse_radix("000000000000000000000000000000000000000000000003ffffffffffffffff", 16).unwrap().complete();
     // println!("{:?}", int.complete() < int2.complete());
     // println!("{}", int.complete().to_string_radix(16));
     // println!("{}", int2.complete().to_string_radix(16));
 
-    let min_bytes = int.complete().to_digits::<u8>(rug::integer::Order::MsfBe);
-    let max_bytes = int2.complete().to_digits::<u8>(rug::integer::Order::MsfBe);
+    let min_bytes = min_secret_key.to_digits::<u8>(rug::integer::Order::MsfBe);
+    let max_bytes = max_secret_key.to_digits::<u8>(rug::integer::Order::MsfBe);
 
     println!("{:?}", min_bytes);
     println!("{:?}", max_bytes);
@@ -190,14 +253,15 @@ async fn main() {
     // vec1.append(&mut min_bytes);
 
     let address1 = private_key_to_address(&secp, min_secret_key_bytes.to_vec());
-    let address2 = private_key_to_address(&secp, min_bytes.to_vec());
+    let address2 = integer_private_key_to_address(&secp, min_secret_key.clone());
     println!("address1: {}", address1);
     println!("address2: {}", address2);
 
     // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
     // let max_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000002").unwrap();
 
-    search_private_key_for_address(min_secret_key_bytes, max_secret_key_bytes, target_address);
+    // search_private_key_for_address(min_secret_key_bytes, max_secret_key_bytes, target_address);
+    search_private_key_for_address_in_integer_range(min_secret_key, max_secret_key, target_address);
 
     // println!("{:?}", min_secret_key_bytes);
     // println!("{:?}", max_secret_key_bytes);
