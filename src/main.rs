@@ -220,6 +220,7 @@ async fn main() {
     let target_address = String::from_str("13zb1hQbWVsc2S7ZTZnP2G4undNNpdh5so").unwrap();
     // let target_address = "1LgpDjsqkxF9cTkz3UYSbdTJuvbZ45PKvx";
     // let target_address = "1LeH7eeznEDVeNNmAinoiSjuhNa77izzNo";
+    // let target_address = String::from_str("1DRXKrQk6gxjfa2E7XwD67Un5kpEsycQoD").unwrap();
     // let target_address = String::from_str("1AQADrSG75JmRAnAtFUyyjBmdeQy5Y5aqf").unwrap();
     
     // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
@@ -230,12 +231,15 @@ async fn main() {
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000007cf7f180").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000008f847a80").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000012b7a2080").unwrap();
-    let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000245f10780").unwrap();
-    let max_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000003ffffffffffffffff").unwrap();
+    let min_secret_key_str = "0000000000000000000000000000000000000000000000020000000257af9220";
+    let max_secret_key_str = "000000000000000000000000000000000000000000000003ffffffffffffffff";
 
-    let min_secret_key = Integer::parse_radix("0000000000000000000000000000000000000000000000020000000245f10780", 16).unwrap().complete();
+    let min_secret_key_bytes = decode_hex(min_secret_key_str).unwrap();
+    let max_secret_key_bytes = decode_hex(max_secret_key_str).unwrap();
+
+    let min_secret_key = Integer::parse_radix(min_secret_key_str, 16).unwrap().complete();
     println!("{:?}", min_secret_key);
-    let max_secret_key = Integer::parse_radix("000000000000000000000000000000000000000000000003ffffffffffffffff", 16).unwrap().complete();
+    let max_secret_key = Integer::parse_radix(max_secret_key_str, 16).unwrap().complete();
     // println!("{:?}", int.complete() < int2.complete());
     // println!("{}", int.complete().to_string_radix(16));
     // println!("{}", int2.complete().to_string_radix(16));
