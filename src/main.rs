@@ -2,6 +2,7 @@ use bitcoin::base58::encode;
 use bitcoin::{Network, PrivateKey, PublicKey, Address};
 use bitcoin::secp256k1::{Secp256k1, Signing};
 use std::str::FromStr;
+use std::fs;
 // use std::fmt::Debug;
 // use hex::encode_upper;
 use std::time::{Instant, Duration};
@@ -231,11 +232,20 @@ async fn main() {
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000007cf7f180").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000008f847a80").unwrap();
     // let min_secret_key_bytes = decode_hex("000000000000000000000000000000000000000000000002000000012b7a2080").unwrap();
-    let min_secret_key_str = "0000000000000000000000000000000000000000000000020000000257af9220";
-    let max_secret_key_str = "000000000000000000000000000000000000000000000003ffffffffffffffff";
+    // let min_secret_key_str = "0000000000000000000000000000000000000000000000020000000257af9220";
+    // let max_secret_key_str = "000000000000000000000000000000000000000000000003ffffffffffffffff";
 
-    let min_secret_key_bytes = decode_hex(min_secret_key_str).unwrap();
-    let max_secret_key_bytes = decode_hex(max_secret_key_str).unwrap();
+    // let min_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/from").unwrap();
+    // let max_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/to").unwrap();
+
+    let min_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/from").unwrap();
+    let max_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/to").unwrap();
+
+    println!("{}", min_secret_key_str);
+    println!("{}", max_secret_key_str);
+
+    let min_secret_key_bytes = decode_hex(&min_secret_key_str).unwrap();
+    let max_secret_key_bytes = decode_hex(&max_secret_key_str).unwrap();
 
     let min_secret_key = Integer::parse_radix(min_secret_key_str, 16).unwrap().complete();
     println!("{:?}", min_secret_key);
