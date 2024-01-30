@@ -14,3 +14,4 @@ bitcoin = { version = "0.31.1", features = ["rand-std"] }
 tokio = { version = "1", features = ["full"] }
 hex = "0.4.2"
 rug = "1.23.0"
+getopt = "1.1.4"

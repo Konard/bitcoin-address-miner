@@ -9,6 +9,7 @@ use std::time::{Instant, Duration};
 use std::{fmt::Write, num::ParseIntError};
 // use rug::{Assign, Integer, Complete};
 use rug::{Integer, Complete, integer, Assign};
+use getopt::Opt;
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
@@ -160,21 +161,19 @@ fn search_private_key_for_address(min_secret_key_bytes: Vec<u8>, max_secret_key_
     }
 }
 
-fn search_private_key_for_address_in_integer_range(min_secret_key: Integer, max_secret_key: Integer, target_address: String) {
+fn search_private_key_for_address_in_integer_range(min_secret_key: Integer, max_secret_key: Integer, target_address: String, reverse: bool) {
     let secp = Secp256k1::new();
-    let mut current_secret = min_secret_key.clone();
-
+    
     let mut i = 0;
     let mut before = Instant::now();
     let mut average_nanos = 0;
     let addresses_per_batch = 100_000;
-    let step = if max_secret_key < min_secret_key {
-        -1
-    } else {
-        1
-    };
 
-    while current_secret != max_secret_key {
+    let mut current_secret = if reverse { max_secret_key.clone() } else { min_secret_key.clone() };
+    let step = if reverse { -1 } else { 1 };
+    let limit = if reverse { min_secret_key } else { max_secret_key };
+
+    while current_secret != limit {
         let address = integer_private_key_to_address(&secp, current_secret.clone());
 
         if address.to_string() == target_address {
@@ -203,6 +202,26 @@ fn search_private_key_for_address_in_integer_range(min_secret_key: Integer, max_
 #[tokio::main]
 async fn main() {
 
+    let args: Vec<String> = std::env::args().collect();
+    let mut opts = getopt::Parser::new(&args, "r");
+
+    let mut reverse = false;
+    // let mut b_flag = String::new();
+    loop {
+        match opts.next().transpose().unwrap() {
+            None => break,
+            Some(opt) => match opt {
+                Opt('r', None) => reverse = true,
+                // Opt('b', Some(string)) => b_flag = string.clone(),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    println!("{}", reverse);
+
+    // let args = args.split_off(opts.index());
+
     // let mut int = Integer::new();
     // int.assign(14);
 
@@ -224,6 +243,8 @@ async fn main() {
     // let target_address = String::from_str("1DRXKrQk6gxjfa2E7XwD67Un5kpEsycQoD").unwrap();
     // let target_address = String::from_str("1AQADrSG75JmRAnAtFUyyjBmdeQy5Y5aqf").unwrap();
     // let target_address = String::from_str("1Eo3WvHuWKcjcuA6R8KAPFWkNwMEa2WRvT").unwrap();
+    // let target_address = String::from_str("1HeN9bQzsFTs1kXaigXyxE6i2FdDbBkn8n").unwrap();
+    // let target_address = String::from_str("19UPUkDkAgZp3qmPpSm1U87xAMEC3aRfDu").unwrap();
 
     
     // let min_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000000").unwrap();
@@ -237,11 +258,11 @@ async fn main() {
     // let min_secret_key_str = "0000000000000000000000000000000000000000000000020000000257af9220";
     // let max_secret_key_str = "000000000000000000000000000000000000000000000003ffffffffffffffff";
 
-    // let min_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/from").unwrap();
-    // let max_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/to").unwrap();
+    let min_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/from").unwrap();
+    let max_secret_key_str = fs::read_to_string("./ranges/20000000000000000-3ffffffffffffffff/to").unwrap();
 
-    let min_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/from").unwrap();
-    let max_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/to").unwrap();
+    // let min_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/from").unwrap();
+    // let max_secret_key_str = fs::read_to_string("./ranges/3ffffffffffffffff-20000000000000000/to").unwrap();
 
     println!("{}", min_secret_key_str);
     println!("{}", max_secret_key_str);
@@ -277,7 +298,7 @@ async fn main() {
     // let max_secret_key_bytes = decode_hex("0000000000000000000000000000000000000000000000020000000000000002").unwrap();
 
     // search_private_key_for_address(min_secret_key_bytes, max_secret_key_bytes, target_address);
-    search_private_key_for_address_in_integer_range(min_secret_key, max_secret_key, target_address);
+    search_private_key_for_address_in_integer_range(min_secret_key, max_secret_key, target_address, reverse);
 
     // println!("{:?}", min_secret_key_bytes);
     // println!("{:?}", max_secret_key_bytes);
