@@ -1,6 +1,7 @@
 use bitcoin::base58::encode;
 use bitcoin::{Network, PrivateKey, PublicKey, Address};
 use bitcoin::secp256k1::{Secp256k1, Signing};
+// use core::slice::SlicePattern;
 use std::str::FromStr;
 use std::fs;
 // use std::fmt::Debug;
@@ -30,6 +31,14 @@ pub fn integer_to_hex(integer: Integer) -> String {
     let bytes = integer.to_digits::<u8>(rug::integer::Order::MsfBe);
     let processed_bytes = append_to_32(bytes);
     return encode_hex(&processed_bytes);
+}
+
+pub fn encode_to_binary(txt: String) -> String {
+    let bits: String = txt.into_bytes()
+        .iter()
+        .map(|&c| format!("{c:08b}"))
+        .collect();
+    return bits;
 }
 
 // fn check_allowed_chars(starting_letters: &str) -> bool {
@@ -214,7 +223,9 @@ fn iterate_private_key_and_address_in_integer_range(min_secret_key: Integer, max
     while current_secret != limit {
         let address = integer_private_key_to_address(&secp, current_secret.clone());
 
-        println!("{} ↦ {}", address, integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", address, integer_to_hex(current_secret.clone()));
+
+        println!("{} ↦ {}", hex::encode(address.to_string()), integer_to_hex(current_secret.clone()));
 
         // if address.to_string() == target_address {
         //     break;
