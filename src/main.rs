@@ -223,9 +223,9 @@ fn iterate_private_key_and_address_in_integer_range(min_secret_key: Integer, max
     while current_secret != limit {
         let address = integer_private_key_to_address(&secp, current_secret.clone());
 
-        // println!("{} ↦ {}", address, integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", address, integer_to_hex(current_secret.clone()));
 
-        println!("{} ↦ {}", hex::encode(address.to_string()), integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", hex::encode(address.to_string()), integer_to_hex(current_secret.clone()));
 
         // if address.to_string() == target_address {
         //     break;
