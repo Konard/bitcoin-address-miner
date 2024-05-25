@@ -1,4 +1,17 @@
 use bitcoin::base58::encode;
+use bitcoin::base58::decode;
+use bitcoin::hashes::ripemd160;
+
+// use bitcoin::bitcoin_hashes::Hash;
+// use object::read::elf::section::SectionHeader;
+// use std::hash::Hash;
+
+// use bitcoin::hashes::sha256;
+// use bitcoin::hashes::sha256::Hash;
+
+use bitcoin_hashes::sha256;
+use bitcoin_hashes::Hash;
+
 use bitcoin::{Network, PrivateKey, PublicKey, Address};
 use bitcoin::secp256k1::{Secp256k1, Signing};
 // use core::slice::SlicePattern;
@@ -221,9 +234,35 @@ fn iterate_private_key_and_address_in_integer_range(min_secret_key: Integer, max
     let limit = if reverse { min_secret_key } else { max_secret_key };
 
     while current_secret != limit {
-        let address = integer_private_key_to_address(&secp, current_secret.clone());
 
-        println!("{} ↦ {}", address, integer_to_hex(current_secret.clone()));
+
+        let address = integer_private_key_to_address(&secp, current_secret.clone());
+        let address_string = address.to_string();
+        let address_bytes = decode(&address_string).unwrap();
+        let address_ripemd160: Vec<u8> = address_bytes.iter().skip(1).take(20).map(|x| *x).collect();
+
+        let mut address_network_ripemd160 = vec![u8::from(0)];
+        address_network_ripemd160.append(&mut address_ripemd160.clone());
+
+        let mut address_bytes_reconstructed = address_network_ripemd160.clone();
+
+        // bitcoin::hashes::sha256::Hash::hash(&address_bytes_reconstructed);
+
+        let address_hash = sha256::Hash::hash(&address_bytes_reconstructed);
+        let address_hash_bytes = address_hash.hash_again().to_byte_array();
+        let mut address_hash_bytes_vec = address_hash_bytes.iter().take(4).map(|x| *x).collect();
+        address_bytes_reconstructed.append(&mut address_hash_bytes_vec);
+
+        let address_string_reconstructed = encode(&address_bytes_reconstructed);
+
+        println!();
+        println!("{} ↦ {}", address_string, integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", encode_hex(&address_bytes), integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", encode_hex(&address_ripemd160), integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", encode_hex(&address_network_ripemd160), integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", encode_hex(&address_bytes_reconstructed), integer_to_hex(current_secret.clone()));
+        println!("{} ↦ {}", address_string_reconstructed, integer_to_hex(current_secret.clone()));
+        
 
         // println!("{} ↦ {}", hex::encode(address.to_string()), integer_to_hex(current_secret.clone()));
 
