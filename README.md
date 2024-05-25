@@ -1,5 +1,7 @@
 # Bitcoin Address Miner
 
+[![Gitpod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/konard/bitcoin-address-miner)
+
 ## Overview
 
 The Bitcoin Address Miner is a utility written in `Rust` that searches private keys for specific bitcoin wallet address (*Base58 P2PKH*) [BIP-32](https://en.bitcoin.it/wiki/BIP_0032)  
