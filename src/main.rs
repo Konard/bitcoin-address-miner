@@ -255,13 +255,13 @@ fn iterate_private_key_and_address_in_integer_range(min_secret_key: Integer, max
 
         let address_string_reconstructed = encode(&address_bytes_reconstructed);
 
-        println!();
-        println!("{} ↦ {}", address_string, integer_to_hex(current_secret.clone()));
-        println!("{} ↦ {}", encode_hex(&address_bytes), integer_to_hex(current_secret.clone()));
+        // println!();
+        // println!("{} ↦ {}", address_string, integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", encode_hex(&address_bytes), integer_to_hex(current_secret.clone()));
         println!("{} ↦ {}", encode_hex(&address_ripemd160), integer_to_hex(current_secret.clone()));
-        println!("{} ↦ {}", encode_hex(&address_network_ripemd160), integer_to_hex(current_secret.clone()));
-        println!("{} ↦ {}", encode_hex(&address_bytes_reconstructed), integer_to_hex(current_secret.clone()));
-        println!("{} ↦ {}", address_string_reconstructed, integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", encode_hex(&address_network_ripemd160), integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", encode_hex(&address_bytes_reconstructed), integer_to_hex(current_secret.clone()));
+        // println!("{} ↦ {}", address_string_reconstructed, integer_to_hex(current_secret.clone()));
         
 
         // println!("{} ↦ {}", hex::encode(address.to_string()), integer_to_hex(current_secret.clone()));
